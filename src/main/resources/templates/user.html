@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qs/6.10.1/qs.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js" />
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/bootstrap-table.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- cdn引入ElementUI组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+	<style scoped>
+         body {
+            margin: auto;
+            padding: 0;
+        }
+
+        #app {
+            width: 70%;
+			left:20%;
+			right: 30%;
+			position: relative;
+        }
+
+        .h2Title {
+            padding-top:3rem;
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+            margin:10px;
+        }
+        .h3Title {
+			padding-top:3rem;
+            text-align: right;
+            padding-right:20%;
+            font-size: 18px;
+            color: black;
+        }
+
+        .Fbuttons {
+            background: bisque;
+			font-size: 15px;
+            margin: 12px;
+            cursor: pointer;
+            height: 40px;
+            border-radius: 6px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            width: auto;
+        }
+
+		.Lbuttons {
+            background: bisque;
+            margin-top: 5px;
+			margin-bottom: 10px;
+			margin: 6px;
+            cursor: pointer;
+            height: 30px;
+            border-radius: 6px;
+            width: auto;
+        }
+
+        .Input {
+			position: relative;
+            display: inline-table;
+            width: auto;
+            height: 35px;
+			margin: 6px;
+            border-radius: 6px;
+        }
+
+        .main {
+            background-color: bisque;
+            width: 30rem;
+        }
+        .msg {
+            font-size: 30px;
+            white-space: pre-wrap; /*这是重点。文本换行*/
+            margin: 20px auto;
+            text-align: left;
+        }
+        .rules .ins {
+            font-size: 20px;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+            margin-bottom: 5px;
+            width: 300px;
+            margin-top:15px
+        }
+		.Linput {
+			font-size: 9px;
+			padding-left: 10px;
+			display: inline-table;
+			width: 8rem;
+			height:auto;
+			margin: 4px;
+			border-radius: 4px;
+		}
+
+    </style>
+	<title>Document</title>
+</head>
+
+<body>
+	<div id="app">
+		<div class="h2Title">智能充电桩计费调度系统</div>
+		<div class="h3Title">{{time}}&emsp;&emsp;317班&emsp;B组</div>
+		<div display="margin-bottom: 30px" type="flex" justify="center" text-align="center">
+			<el-button @click="intoLogin()" class="Fbuttons">登录界面</el-button>
+			<el-button @click="intoCharge()" class="Fbuttons">充电界面</el-button>
+			<el-button @click="intoQueue()" class="Fbuttons">等待界面</el-button>
+			<el-button @click="intoIdle()" class="Fbuttons">申请界面</el-button>
+		</div>
+		<hr>
+
+		<br><br>
+		<el-form v-if="showChargingData" lable-width="100px" style="padding-left: 20%;">
+			<span class="msg" style="display:block;  padding-left: 20%; padding-bottom: 1rem;">充电区域</span>
+			<span style="display:block; padding-left:10%; padding-bottom: 1rem;">快充等候区数量： {{WaitingData.Fwaiting}}&emsp;&emsp;&emsp;
+			慢充等候区数量： {{WaitingData.Twaiting}}<br><br></span>
+			<el-table :data="ChargingData" :header-cell-style="{'text-align':'center'}" 
+						height="350" style="width:600px; padding-left: 10%">
+				<el-table-column property="id" label="充电桩" align="center" width="150"></el-table-column>
+				<el-table-column property="num" label="排队车辆" align="center" width="150"></el-table-column>
+			</el-table>		
+			<br>
+		</el-form>
+
+		<!--输入四元组的表单
+		<el-dialog tltle="请求表单": visible.sync="showInputForm" width="30%">-->
+		<el-form v-if="showInputForm" model="inputForm" lable-width="100px" style="padding-left: 20%;">
+				<span class="msg" style="display:block;padding-left: 20%; padding-bottom: 2rem;">操作申请</span>
+				<el-input v-model="inputForm.c1" class="Input" placeholder="请求"></el-input>
+				<el-input v-model="inputForm.id" class="Input" placeholder="车号"></el-input><br><br>
+				<el-input v-model="inputForm.mode" class="Input" placeholder="模式"></el-input>
+				<el-input v-model="inputForm.need" class="Input" placeholder="总量"></el-input><br><br>
+			<br>
+				<el-button @click="showInputForm = false" style="margin-left: 18%;">取 消</el-button>
+				<el-button type="primary" @click="dealForm">确 定</el-button>
+		</el-form>
+		<!--</el-dialog>-->
+
+		<el-form v-if="showDetail" model="detail" lable-width="100px" style="padding-left: 5%;">
+			<span class="msg" style="display:block;padding-left: 40%; padding-bottom: 1rem;">充电详单</span>
+			<!-- <span class="msg" style="display:block;padding-left: 13%; font-size: 18px; padding-bottom: 1rem;">
+				用户名：{{id}}&emsp;&emsp;总费用：{{totalFee}}</span> -->
+			
+			<el-table :data="detail" :header-cell-style="{'text-align':'center'}" 
+						height="350" style="width:1500px; padding-left: 0%;">
+				<el-table-column property="detId" label="详单编号" text-align="center" width="80"></el-table-column>
+				<el-table-column property="carId" label="车辆编号" text-align="center" width="80"></el-table-column>
+				<el-table-column property="genaTime" label="详单时间" text-align="center" width="80"></el-table-column>
+				<el-table-column property="chaId" label="充电桩" text-align="center" width="70"></el-table-column>
+				<el-table-column property="chaNeed" label="充电量" text-align="center" width="70"></el-table-column>
+				<el-table-column property="chaDur" label="充电时长" text-align="center" width="80"></el-table-column>
+				<el-table-column property="staTime" label="开始时间" text-align="center" width="80"></el-table-column>
+				<el-table-column property="endTime" label="结束时间" text-align="center" width="80"></el-table-column>
+				<el-table-column property="chaFee" label="电费" text-align="center" width="60"></el-table-column>
+				<el-table-column property="serFee" label="服务费" text-align="center" width="70"></el-table-column>
+				<el-table-column property="tolFee" label="总费用" text-align="center" width="70"></el-table-column>
+			</el-table>	
+		</el-form>
+
+
+		<!--
+		<el-form v-if="showStopForm"lable-width="100px" style="padding-left: 20%;">
+			<el-input v-model="stopID" class="Input" placeholder="输入停止充电号"></el-input>
+			<br><br>
+			<el-button @click="showInputForm = false" style="margin-left: 18%;">取 消</el-button>
+			<el-button type="primary" @click="dealForm">确 定</el-button>
+		</el-form>-->
+
+		<el-form v-if="seen0" style="padding-left: 20%;">
+			<span class="msg" style="display:block; padding-left: 20%; padding-bottom: 1rem;">用户登录</span>
+			<div class="chess" display="margin-top:20px" type="flex" justify="center" text-align="center">
+				<el-input v-model="id" placeholder="账号" class="Input"></el-input>
+				<el-input v-model="code" placeholder="密码" class="Input"></el-input>
+			</div><br>
+			<div display="margin-top:20px" style="padding-left: 10%;">
+				<el-button @click="login()" class="Fbuttons">登录</el-button>
+				<el-button @click="register()" class="Fbuttons">注册</el-button>
+				<el-button @click="showForm()" class="Fbuttons">免登录输入</el-button>
+			</div>
+		</el-form>
+
+		<el-form v-if="seen1"  style="padding-left: 25%;">
+			<el-button @click="alterRequest()" class="Fbuttons">修改请求</el-button>
+			<el-button @click="intoIdle" class="Fbuttons">终止充电</el-button>
+			<el-button @click="getAll()" class="Fbuttons">更新充电页面</el-button><br><br>
+			<el-input class="Input" v-model="detailID" placeholder="输入车辆号码"></el-input>
+			<el-button @click="checkDetail()" class="Fbuttons">查看详单</el-button><br><br>
+		</el-form>
+
+		<el-form v-if="seen2"  style="padding-left: 20%;">
+			<span class="msg" style="display:block;  padding-left: 20%; padding-bottom: 2rem;">等候区域</span>
+			<span style="display:block; padding-left:6%; padding-bottom: 1rem; font-size: 18px;">快充等候区数量： {{WaitingData.Fwaiting}}&emsp;&emsp;&emsp;
+				慢充等候区数量： {{WaitingData.Twaiting}}<br><br></span>
+				<el-button @click="alterRequest()" class="Fbuttons">修改请求</el-button>
+				<el-button @click="intoIdle" class="Fbuttons">终止充电</el-button><br><br>
+				<el-input class="Input" v-model="detailID" placeholder="输入车辆号码"></el-input>
+				<el-button @click="checkBeforeNum" class="Fbuttons">查看前车等待数量</el-button>
+			</el-form>
+			
+		<el-span v-if="showMsg" class="msg" style="display:block;  padding-left: 20%; padding-bottom: 2rem;">{{content}}</el-span>
+		
+		<div v-if="seendetail"  style="padding-left: 20%;">
+			<hr>
+			<ul v-for="(item,index) in detail" :key="index">
+				<ol>
+					{{item}}
+				</ol>
+				<hr>
+			</ul>
+		</div>
+
+	</div>
+	<!--<script src="user.js"></script>-->
+	<script type="text/javascript">
+		var app = new Vue({
+			el:"#app",
+			data() {
+				return {
+					id: undefined,
+					code: undefined,
+					state: 1,
+					car_id: null,
+					content:"gogogo",
+					detail: [],
+					detailID:null,
+					totalFee:0,
+					ChargingData:[],
+					WaitingData:{
+						Fwaiting:0,
+						Lwaiting:0,
+					},
+					need: 0,
+					mode: 0,
+					timer1:'',
+					hour:'',
+					min:'',
+					time:'',
+					showInputForm: false,
+					showStopForm: false,
+					showChargingData: true,
+					showDetail: false,
+					showMsg: false,
+					seen0: true,
+					seen1: false,
+					seen2: false,
+					seen3: false,
+					inputForm:{
+						c1: '',
+						id: '',
+						mode: '',
+						need: ''
+					},
+					date:new Date(),
+				}
+			},
+			mounted() {
+				//开始即获取当前等候区等队列的情况
+				// this.timer1 = setInterval(this.getAll, 30000); //每15s   30s更新一次
+			},
+			beforDestroy(){
+				clearInterval(this.timer1);
+				clearInterval(this.timer2);
+			},
+			methods: {
+				//显示系统时间
+				dateFormat(time){
+					var date=new Date(time);
+					var year=date.getFullYear();
+					var month= date.getMonth()+1<10 ? "0"+(date.getMonth()+1) : date.getMonth()+1;
+					var day=date.getDate()<10 ? "0"+date.getDate() : date.getDate();
+					var hours=date.getHours()<10 ? "0"+date.getHours() : date.getHours();
+					var minutes=date.getMinutes()<10 ? "0"+date.getMinutes() : date.getMinutes();
+					var seconds=date.getSeconds()<10 ? "0"+date.getSeconds() : date.getSeconds();
+					// 拼接
+					return year+"-"+month+"-"+day+" "+hours+":"+minutes;
+				},
+				//填写表单
+				showForm(){
+					this.showInputForm = true;
+					this.showDetail = false;
+					this.seen0 = false;
+					this.seen1 = false;
+					this.seen2 = false;
+					this.seen3 = false;
+				},
+				//处理表单
+				dealForm(){
+					this.showInputForm=false;
+					console.log(this.inputForm);
+					if(this.inputForm.mode == 'F')
+						this.inputForm.mode = 1;
+					else if(this.inputForm.mode == 'T')
+						this.inputForm.mode = 0;
+					else if(this.inputForm.mode == 'O')
+						this.inputForm.mode = -1;
+					else {
+						alert("充电模式输入错误")
+						exit(-1);
+					}
+
+					if( this.inputForm.c1 == 'A')
+						this.chargeRequest();
+					else if( this.inputForm.c1 == 'B')
+						this.stopCharge();
+					else if( this.inputForm.c1 == 'C')
+						this.alterRequest();
+					else {
+						alert("操作模式输入错误")
+						exit(-1);
+					}
+
+					this.intoCharge();
+				},
+
+				//获取所有充电桩的情况
+				getAll() {
+				axios
+					.get('http://localhost:8002/dataservice/info/changeTime')
+				 	.then(res => {
+				 		this.ChargingData = res.data.data.ChargingData;
+						this.WaitingData = res.data.data.WaitingData;
+						this.hour = res.data.data.hour;
+						this.min = res.data.data.minute;
+						this.time = this.hour+":"+this.min;
+						this.$set(this.ChargingData);
+						this.$set(this.WaitingData);
+				 		console.log(res)
+				 	})
+				},
+				intoLogin() { //进入登录界面
+					this.seen0 = true;
+					this.seen1 = false;
+					this.seen2 = false;
+					this.seen3 = false;
+					this.showMsg = false;
+					this.showDetail = false;
+					this.showInputForm = false;
+				},
+
+				intoCharge() { //进入充电界面
+					this.getAll();
+					this.seen0 = false;
+					this.seen1 = true;
+					this.seen2 = false;
+					this.seen3 = false;
+					this.showMsg = false;
+					this.showInputForm = false;
+					this.showDetail = false;
+					this.showChargingData = true;
+				},
+
+				intoQueue() { //进入队列界面
+					this.seen0 = false;
+					this.seen1 = false;
+					this.seen2 = true;
+					this.seen3 = false;
+					this.showMsg = false;
+					this.showDetail = false;
+					this.showInputForm = false;
+					this.showChargingData = false;
+					this.showChargingData = false;
+				},
+
+				intoIdle() { //进入空闲界面
+					this.seen0 = false;
+					this.seen1 = false;
+					this.seen2 = false;
+					this.seen3 = true;
+					this.showMsg = false;
+					this.showDetail = false;
+					this.showInputForm = true;
+					this.showChargingData = false;
+				},
+
+				checkState() { //查询当前状态
+					axios
+						.get("http://localhost:8002/dataservice/car/state", {
+							params: {
+								id: this.id
+							}
+						})
+						.then(res => {
+							console.log(res);
+							this.state = res.state;
+							this.car_id = res.car_id;
+						});
+
+					if (this.state == 1) {
+						this.intoCharge();
+					} else if (this.state == 2 || this.state == 3) {
+						this.intoQueue();
+					} else if (this.state == 4) {
+						this.intoIdle();
+					}
+				},
+
+				login() { //登录
+
+					axios
+						.get("http://localhost:8002/dataservice/account/login", {
+							params: {
+								username: this.id,
+								password: this.code
+							}
+						})
+						.then(res => {
+							console.log(res.data.success);
+							if (res.data.success) {
+								alert("输入正确");
+								this.checkState();
+							} else {
+								alert("输入有误");
+							}
+						});
+				},
+
+				register() { //注册
+					axios
+						.get("http://localhost:8002/dataservice/account/register", {
+							params: {
+								username: this.id,
+								password: this.code
+							}
+						})
+						.then(res => {
+							console.log(res.data.success);
+							if (res.data.success) {
+								alert("注册成功");
+							} else {
+								alert("账号已存在");
+							}
+						});
+				},
+
+				checkDetail() { //查看详单
+					this.showDetail = true;
+					this.seen0 = false;
+					this.seen1 = false;
+					this.seen2 = false;
+					this.seen3 = false;
+					this.showChargingData = false;
+					this.showInputForm = false;
+					this.showMsg = false;
+					axios.get("http://localhost:8002/dataservice/info/detail", {
+							params: {
+								car_id: this.detailID,
+							}
+						})
+						.then(res => {
+							console.log(res.data.data.list);
+							this.detail = res.data.data.list;
+							this.id = res.data.data.list.car_id;
+							for( i in res.data.data.list){
+								console.log(i);
+								this.totalFee += i.chaFee + i.serFee;
+							}
+							console.log(this.totalFee);
+						});
+				},
+
+				stopCharge() { //停止充电
+					axios
+						.get("http://localhost:8002/dataservice/station/breakdown", {
+							params: {
+								id: this.inputForm.id,
+								// mode: this.inputForm.mode,
+								need: this.inputForm.need
+							}
+						})
+						.then(res => {
+							console.log(res);
+							if(res.data.success){
+								alert("操作成功");
+								// this.getAll();
+								// this.$set(this.ChargingData);
+								// this.$set(this.WaitingData);
+							}
+						});
+				},
+
+				alterRequest() { //修改请求
+					// if(this.state == 1){
+					// 	alert("充电过程中无法修改，请先终止充电")
+					// 	exit(-1)
+					// }
+					// console.log("可以")
+					axios
+						.get("http://localhost:8002/dataservice/car/change", {
+							params: {
+								car_id: this.inputForm.id,
+								need: this.inputForm.need,
+								mode: this.inputForm.mode
+							}
+						})
+						.then(res => {
+							
+							console.log("chenggong");
+						});
+					// this.checkState();
+				},
+
+				chargeRequest() { //提交请求
+					axios
+						.get("http:localhost:8002/dataservice/car/apply", {
+							params: {
+								car_id: this.inputForm.id,
+								need: this.inputForm.need,
+								mode: this.inputForm.mode
+							}
+						})
+						.then(res => {
+							console.log(res);
+							this.state = res.state;
+							if(res.state == 1){
+								this.intoCharge();
+							}
+							else if(res.state == 2 || res.state == 3){
+								this.intoQueue();
+							}
+							else if(res.state == 3){
+								alert("error!")
+							}
+						});
+				},
+
+				checkQueueNum() { //查看排队号码
+					axios
+						.get("http://localhost:8002/dataservice/car/lineId", {
+							params: {
+								car_id: this.id
+							}
+						})
+						.then(res => {
+							console.log(res);
+							this.showMsg = true;
+							this.content = res;
+							alert("当前排队号码为" + res);
+						});
+				},
+
+				checkBeforeNum() { //查看前车等待数量
+					axios
+						.get("http://localhost:8002/dataservice/car/length", {
+							params: {
+								car_id: this.detailID
+							}
+						})
+						.then(res => {
+							console.log(res.data.data.num);
+							this.content = "您的前方等待车辆数目为" + res.data.data.num;;
+							this.showMsg = true;
+							
+							alert("当前前车等待数量为" + res.data.data.num);
+						});
+				}
+			},
+		});
+	</script>
+</body>
+
+</html>

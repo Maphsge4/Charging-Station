@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.0-beta.7/vue.global.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.1/axios.min.js"></script>-->
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qs/6.10.1/qs.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js" />
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/bootstrap-table.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/locale/bootstrap-table-zh-CN.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- cdn引入ElementUI组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <style scoped>
+        body {
+            margin: auto;
+            padding: 0;
+        }
+        
+        #app {
+            width: 70%;
+            left: 20%;
+            right: 30%;
+            position: relative;
+        }
+        
+        .h2Title {
+            padding-top: 3rem;
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px;
+        }
+        
+        .h3Title {
+            padding-top: 3rem;
+            text-align: right;
+            padding-right: 20%;
+            font-size: 18px;
+            color: black;
+        }
+        
+        .Fbuttons {
+            background: bisque;
+            font-size: 15px;
+            margin: 12px;
+            cursor: pointer;
+            height: 40px;
+            border-radius: 6px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            width: auto;
+        }
+        
+        .Lbuttons {
+            background: bisque;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            margin: 6px;
+            cursor: pointer;
+            height: 30px;
+            border-radius: 6px;
+            width: auto;
+        }
+        
+        .Input {
+            position: relative;
+            display: inline-table;
+            width: auto;
+            height: 35px;
+            margin: 6px;
+            border-radius: 6px;
+        }
+        
+        .main {
+            background-color: bisque;
+            width: 30rem;
+        }
+        
+        .msg {
+            font-size: 30px;
+            white-space: pre-wrap;
+            /*这是重点。文本换行*/
+            margin: 20px auto;
+            text-align: left;
+        }
+        
+        .rules .ins {
+            font-size: 20px;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+            margin-bottom: 5px;
+            width: 300px;
+            margin-top: 15px
+        }
+        
+        .Linput {
+            font-size: 9px;
+            padding-left: 10px;
+            display: inline-table;
+            width: 8rem;
+            height: auto;
+            margin: 4px;
+            border-radius: 4px;
+        }
+    </style>
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <div class="h2Title">智能充电桩计费调度系统</div>
+        <div class="h3Title" style="padding-right: 10%">317班&emsp;B组</div>
+
+        <!--查看所有充电桩状态-->
+        <el-form v-if="showAllStations" lable-width="100px" style="padding-left: 15%;">
+            <span class="msg" style="display:block;  padding-left: 25%; padding-bottom: 1rem;">充电区域</span>
+            <el-table :data="AllStations" :header-cell-style="{'text-align':'center'}" 
+                        height="350" style="width:900px">
+                <el-table-column property="id" label="充电桩" text-align="center" width="100"></el-table-column>
+                <el-table-column property="status" label="工作状态" text-align="center" width="100"></el-table-column>
+                <el-table-column property="num" label="充电次数" text-align="center" width="90"></el-table-column>
+                <el-table-column property="time" label="充电总时长" text-align="center" width="100"></el-table-column>
+                <el-table-column property="power" label="充电总电量" text-align="center" width="100"></el-table-column>
+            </el-table>		
+            <br>
+        </el-form>
+
+        <!--查看某个充电桩信息-->
+        <el-form v-if="showInfo" lable-width="100px" style="padding-left: 20%;">
+            <span class="msg" style="display:block;  padding-left: 20%; padding-bottom: 1rem;">充电桩信息</span>
+            <el-table :data="Info" :header-cell-style="{'text-align':'center'}" 
+                        height="350" style="width:900px">
+                <el-table-column property="user_id" label="用户" text-align="center" width="100"></el-table-column>
+                <el-table-column property="total" label="电池总量" text-align="center" width="100"></el-table-column>
+                <el-table-column property="apply" label="请求电量" text-align="center" width="90"></el-table-column>
+                <el-table-column property="time" label="排队时长" text-align="center" width="100"></el-table-column>
+               
+            </el-table>		
+            <br>
+        </el-form>
+
+        <!--查看报表-->
+        <el-form v-if="showReport" lable-width="100px" style="padding-left: 20%;">
+            <span class="msg" style="display:block;  padding-left: 20%; padding-bottom: 10px;">数据报表</span>
+            <span calss="msg" style="display:block; padding-left: 20%; padding-bottom:10px; font-size: 16px">时间:{{time}}</span>
+            <el-table :data="report" :header-cell-style="{'text-align':'center'}" 
+                        height="350" style="width:900px">
+                <el-table-column property="id" label="充电桩编号" text-align="center" width="100"></el-table-column>
+                <el-table-column property="num" label="累计次数" text-align="center" width="100"></el-table-column>
+                <el-table-column property="timelen" label="累计时长" text-align="center" width="90"></el-table-column>
+                <el-table-column property="power" label="累计电量" text-align="center" width="100"></el-table-column>
+                <el-table-column property="fee" label="累计费用" text-align="center" width="100"></el-table-column>
+            </el-table>		
+            <br>
+        </el-form>
+
+        <br>
+            <el-button @click="getAllStations" class="Fbuttons" style="width: auto; ">查看所有充电桩状态</el-button>
+        <hr>
+
+        <div type="flex" justify="center">
+            <el-input type="number" class="Input" v-model="cid" style="width:auto;" placeholder="选择充电桩号"></el-input>
+        </div>
+        <div display="margin-bottom:20px" justify="center"><br>
+            <el-button @click="openStation" class="Lbuttons" style="padding-top: 9px; height: 32px;">开启充电桩</el-button>
+            <el-button @click="closeStation" class="Lbuttons" style="padding-top: 9px; height: 32px;">关闭充电桩</el-button>
+            <el-button @click="getInfo" class="Lbuttons" style="padding-top: 9px; height: 32px;">查看充电桩信息</el-button>
+        </div>
+        <hr>
+
+        <!--申请查看报表-->
+        <br>
+        <el-row type="flex" style="margin-top:15px" float="center">
+            <el-col :span="4">
+                开始时间: <br>
+                <el-input type="number" v-model="starttime.year" class="Linput" placeholder="年"></el-input><br>
+                <el-input type="number" v-model="starttime.month" class="Linput" placeholder="月"></el-input><br>
+                <el-input type="number" v-model="starttime.day" class="Linput" placeholder="日"></el-input><br>
+                <el-input type="number" v-model="starttime.hour" class="Linput" placeholder="时"></el-input><br>
+                <el-input type="number" v-model="starttime.minute" class="Linput" placeholder="分"></el-input><br>
+                <br>
+                <el-button @click="getReport" class="Fbuttons" style="margin-top: 4px; padding-top: 4%; height: 30px;">查看报表</el-button><br><br>
+            </el-col>
+
+            <el-col :offset="2">
+                截至时间: <br>
+                <el-input type="number" v-model="endtime.year" class="Linput" placeholder="年"></el-input><br>
+                <el-input type="number" v-model="endtime.month" class="Linput" placeholder="月"></el-input><br>
+                <el-input type="number" v-model="endtime.day" class="Linput" placeholder="日"></el-input><br>
+                <el-input type="number" v-model="endtime.hour" class="Linput" placeholder="时"></el-input><br>
+                <el-input type="number" v-model="endtime.minute" class="Linput" placeholder="分"></el-input><br>
+            </el-col>
+        </el-row>
+
+        <!--
+        <el-input type="number" v-model="mode" class="Linput"></el-input><br>
+        <el-button @click="alterMode" class="Fbuttons" style="padding-top: 9px; height: 32px;">修改调度模式</el-button><br><br>-->
+        <hr> 快充桩数&emsp;&emsp;
+        
+        <el-input type="number" v-model="quick_num" class="Lbuttons" style="width:100px"></el-input><br> 慢充桩数&emsp;&emsp;
+        <el-input type="number" v-model="slow_num" class="Lbuttons" style="width:100px"></el-input><br> 等候区容量&emsp;
+        <el-input type="number" v-model="wait_num" class="Lbuttons" style="width:100px"></el-input><br> 队列容量&emsp;&emsp;
+        <el-input type="number" v-model="que_num" class="Lbuttons" style="width:100px"></el-input><br>
+        <br>
+        <el-button @click="alterParam" class="Fbuttons" style="padding-top: 9px; height: 32px;">修改参数</el-button><br><br>
+
+        <div v-if="seenState">
+            <ul v-for="(item,index) in states" :key="index">
+                <button></button>
+                <ol>
+                    {{item}}
+                </ol>
+            </ul>
+            <hr>
+        </div>
+
+        <div v-if="seenQueue">
+            <ul v-for="(item,index) in queue" :key="index">
+                <ol>
+                    {{item}}
+                </ol>
+            </ul>
+            <hr>
+        </div>
+
+        <div v-if="seenReport">
+            {{report}}
+            <hr>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        const app = new Vue({
+            el: "#app",
+            data() {
+                return {
+                    AllStations:[],
+                    Info:[],
+                    report:[],
+					showAllStations: true,
+                    showInfo: false,
+                    showReport: false,
+
+                    timer:null,
+                    time:null,
+
+                    number: 5,
+                    cid: null,
+                    starttime: {
+                        year: null,
+                        month: null,
+                        day: null,
+                        hour: null,
+                        minute: null
+                    },
+                    endtime: {
+                        year: null,
+                        month: null,
+                        day: null,
+                        hour: null,
+                        minute: null
+                    },
+                    mode: 0,
+
+                    quick_num: 2,
+                    slow_num: 3,
+                    wait_num: 10,
+                    que_num: 3,
+                }
+            },
+            mounted() {
+                this.timer = setInterval(this.getAll, 300000);
+            },
+            methods: {
+                //获取所有充电桩状态
+                getAllStations() {
+                    this.showAllStations = true;
+                    this.showReport = false;
+                    this.showInfo = false;
+                    
+                    axios
+                        .get('http://localhost:8002/dataservice/info/changeTime')
+                        .then(res => {
+                            this.AllStations = res;
+                            this.WaitingData = res;
+                            this.$set(this.AllStations);
+                            console.log(res)
+                        })
+				},
+
+                //查看一个充电桩信息
+                getInfo(){
+                    this.showInfo = true;
+                    this.showReport = false;
+                    this.showAllStations = false;
+
+                    axios.get('',{
+                        params:{
+                            id: this.cid
+                        }
+                    })
+                    .then(res => {
+                        this.Info = res;
+                        this.$set(this.Info);
+
+                        
+                        console.log(res)
+                    })
+                },
+
+                getReport() { //查看报表
+
+                    this.showReport = true;
+                    this.showAllStations = false;
+                    this.showInfo = false;
+
+                    axios
+                    .get("查询报表url")
+                    .then(res => {
+                        console.log(res);
+                        this.report = res;
+
+                    });
+                },
+
+                alterMode() { //更改调度模式
+                    axios
+                        .get("更改调度url", {
+                            params: {
+                                starttime: this.starttime,
+                                endtime: this.endtime
+                            }
+                        })
+                        .then(res => {
+                            console.log(res);
+                        });
+                },
+
+                alterParam() { //更改参数
+                    axios
+                        .get("http://localhost:8002/system/para", {
+                            params: {
+                                quick_num: this.quick_num,
+                                slow_num: this.slow_num,
+                                wait_num: this.wait_num,
+                                que_num: this.que_num
+                            }
+                        })
+                        .then(res => {
+                            console.log(res);
+                            alert("success")
+                        });
+                },
+
+                //启动充电桩
+                openStation() {
+                    axios
+                        .get("http://localhost:8002/dataservice/station/open", {
+                            params: {
+                                id: this.cid
+                            }
+                        })
+                        .then(res => {
+                            console.log(res);
+                        });
+                },
+
+                //关闭充电桩
+                closeStation() {
+                    axios
+                        .get("http://localhost:8002/dataservice/station/close", {
+                            params: {
+                                id: this.cid
+                            }
+                        })
+                        .then(res => {
+                            console.log(res);
+                        });
+                },
+            },
+        });
+    </script>
+</body>
+
+</html>
